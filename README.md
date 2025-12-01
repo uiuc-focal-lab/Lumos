@@ -38,12 +38,10 @@ python certificate.py --question "Is there a car?" --answer "yes" --image_dir "p
 
 2. **Building-route blockage check**
    - **Scenario Files**: `obstacle_*.scenic`
-   - **Description**: Ego->(1-3m ahead) Barrier/Vehicle
    - **Question**: Answer with only ‘Yes’ or ‘No’: Does a building block the vehicle’s route?
    - **Correct Answer**: No
 
 3. **Right-turn feasibility**
    - **Scenario Files**: `right_*.scenic`
-   - **Description**: Ego->(2m)->Intersection with right turn
    - **Question**: Answer with only ‘Yes’ or ‘No’: Is a right turn physically possible here?
    - **Correct Answer**: Yes
