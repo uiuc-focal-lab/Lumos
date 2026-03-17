@@ -1,0 +1,20 @@
+v_ego := Node(L{"ego_vehicle"})
+v_barrier := Node(L{"barrier"})
+v_empty := Node(L{"empty_path"})
+v_rain := Node(L{"rain"})
+e_barrier := Edge(v_ego, v_barrier, L{"ahead"})
+e_empty := Edge(v_ego, v_empty, L{"ahead"})
+e_weather := Edge(v_ego, v_rain, L{"weather"})
+G_sym := Graph({v_ego, v_barrier, v_empty, v_rain}, {e_barrier, e_empty, e_weather})
+
+estimateProb 0.05 200 "Clopper-Pearson" :
+    v_obs := sample(meas({v_barrier, v_empty}))
+    e_obs := getEdge(v_ego, v_obs, G_sym)
+    e_w := getEdge(v_ego, v_rain, G_sym)
+    g_sym := v_ego + v_obs + v_rain + e_obs + e_w
+    sim_cmd := format("Setup {v_ego} with {v_obs} ahead in {v_rain} weather", g_sym)
+    img := tool-call(Scenic, sim_cmd)
+    r := L(img + "Is it necessary for the vehicle to stop here?")
+    if v_obs = v_barrier then gt := "yes" else gt := "no"
+    obs := (J_VLM_QA(r, gt) = 1)
+toEstimate(obs)

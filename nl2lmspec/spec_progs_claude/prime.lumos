@@ -1,0 +1,68 @@
+```
+G := getGraph("primekg.csv")
+
+estimateProb 0.05 1000 "Clopper-Pearson" :
+    # Sample drug node d
+    drugs := {v | v in G.N and v.L[0] = "drug"}
+    d := sample(meas(drugs))
+
+    # Sample dis1: neighbour of d via "treat" edge
+    treat_neighbors := {v | v in NB(d) and getEdge(d, v, G).L[0] = "treat"}
+    dis1 := sample(meas(treat_neighbors))
+
+    # Sample dis2: neighbour of d via "contraindicate" edge
+    contra_neighbors := {v | v in NB(d) and getEdge(d, v, G).L[0] = "contraindicate"}
+    dis2 := sample(meas(contra_neighbors))
+
+    # Compute set of all drugs that treat dis1 AND are contraindicated for dis2
+    correct_drugs := {v | v in drugs and getEdge(v, dis1, G).L[0] = "treat" and getEdge(v, dis2, G).L[0] = "contraindicate"}
+
+    # Sample three unique distractor drug nodes not in correct_drugs
+    pool := {v | v in drugs and not (v in correct_drugs)}
+
+    dist1 := sample(meas(pool))
+    pool2 := {v | v in pool and not (v = dist1)}
+    dist2 := sample(meas(pool2))
+    pool3 := {v | v in pool2 and not (v = dist2)}
+    dist3 := sample(meas(pool3))
+
+    # Build ordered set of candidates
+    candidates := {d, dist1, dist2, dist3}
+
+    # Shuffle candidates by sampling without replacement
+    c0 := sample(meas(candidates))
+    remaining1 := {v | v in candidates and not (v = c0)}
+    c1 := sample(meas(remaining1))
+    remaining2 := {v | v in remaining1 and not (v = c1)}
+    c2 := sample(meas(remaining2))
+    remaining3 := {v | v in remaining2 and not (v = c2)}
+    c3 := sample(meas(remaining3))
+    options := {c0, c1, c2, c3}
+
+    # Determine ground truth label (label of d in shuffled options)
+    gt_label := "A)"
+    if options[0] = d then gt_label := "A)" else gt_label := gt_label
+    if options[1] = d then gt_label := "B)" else gt_label := gt_label
+    if options[2] = d then gt_label := "C)" else gt_label := gt_label
+    if options[3] = d then gt_label := "D)" else gt_label := gt_label
+
+    # Build context from last attributes of d, dis1, dis2
+    ctx := d.L[-1] + dis1.L[-1] + dis2.L[-1]
+
+    # Build question using format -- lift dis1 and dis2 into graphs
+    gd := G + dis1 + dis2
+    question := format("Which drug treats {dis1} and is contraindicated for {dis2}?", gd)
+
+    # Build options string
+    opt_str := "A) " + options[0].L[0] + " B) " + options[1].L[0] + " C) " + options[2].L[0] + " D) " + options[3].L[0]
+
+    # Compose full prompt
+    prompt := ctx + question + opt_str
+
+    # Query LMS
+    response := L(prompt)
+
+    # Judge response against ground truth label
+    obs := (J_QA(response, gt_label) = 1)
+toEstimate(obs)
+```
