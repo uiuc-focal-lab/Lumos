@@ -4,6 +4,8 @@ This repo contains:
 
 - `privacy_jailbreaks.py`
 - `run_study_batched_all_prompts.py`
+- `run_study_clopper_pearson.py`
+- `enron_clopper_pearson_with_jb.csv`
 
 ## What These Files Do
 
@@ -31,6 +33,28 @@ For each instance, it prepends a generated jailbreak to a base Enron prompt, run
 - per-instance bounds/status,
 - an aggregate comparison summary.
 
+### `run_study_clopper_pearson.py`
+
+Runs a sampling-based privacy experiment (non-certification) over the same Enron prompts.
+
+For each `(model, prompt_idx)` it:
+
+- samples normal generations,
+- checks each output with the privacy constraint (safe/unsafe),
+- computes Clopper-Pearson bounds on unsafe rate,
+- writes one result row per prompt.
+
+### `enron_clopper_pearson_with_jb.csv`
+
+A saved output CSV from `run_study_clopper_pearson.py`.
+
+Main columns:
+
+- `model`, `prompt_idx`, `samples`
+- `unsafe_count`, `unsafe_rate`
+- `unsafe_cp_lb`, `unsafe_cp_ub`
+- `use_jailbreak`
+
 ## Important Dependency Note
 
 This script expects the same project layout used in the original environment:
@@ -39,8 +63,6 @@ This script expects the same project layout used in the original environment:
 - Enron experiment utilities from Beaver (`experiments.enron.enron`)
 - `certification.aggregate_bounds` available on `PYTHONPATH`
 
-So this bundle is primarily a code snapshot; run-time dependencies come from Beaver/LLMCert-style setup.
-
 ## Expected Outputs
 
 By default, the script writes:
@@ -48,6 +70,7 @@ By default, the script writes:
 - `output/enron_study_results_batched_all_prompts.csv`
 - `output/enron_study_results_batched_all_prompts_instances.csv`
 - `output/comparison_summary_with_jb.csv`
+- `output/enron_clopper_pearson_with_jb.csv` (from `run_study_clopper_pearson.py` unless `-o` is set)
 
 ## Example Run
 
@@ -62,4 +85,10 @@ python run_study_batched_all_prompts.py \
   --model meta-llama/Llama-3.2-3B-Instruct \
   --prompts 3,4,5 \
   --server_addr http://localhost:8081
+```
+
+Clopper-Pearson run:
+
+```bash
+python run_study_clopper_pearson.py --samples 200
 ```
